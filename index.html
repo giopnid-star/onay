@@ -250,9 +250,21 @@ document.querySelector('.nav-btn-center').addEventListener('click', function() {
                         let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                         let code = jsQR(imageData.data, canvas.width, canvas.height);
                         if (code) {
-                            alert('QR-код: ' + code.data);
-                            stream.getTracks().forEach(track => track.stop());
-                            overlay.remove();
+                            // Можно здесь обработать QR-код (например, показать в оверлее или отправить на сервер)
+                            let resultMsg = document.createElement('div');
+                            resultMsg.style.color = '#fff';
+                            resultMsg.style.background = 'rgba(0,0,0,0.7)';
+                            resultMsg.style.padding = '18px';
+                            resultMsg.style.margin = '32px auto';
+                            resultMsg.style.borderRadius = '12px';
+                            resultMsg.style.maxWidth = '90vw';
+                            resultMsg.style.textAlign = 'center';
+                            resultMsg.innerText = 'QR-код: ' + code.data;
+                            overlay.appendChild(resultMsg);
+                            setTimeout(() => {
+                                stream.getTracks().forEach(track => track.stop());
+                                overlay.remove();
+                            }, 2000);
                             return;
                         }
                     }
@@ -273,7 +285,7 @@ document.querySelector('.nav-btn-center').addEventListener('click', function() {
                 };
             })
             .catch(function(err) {
-                // Ошибка камеры — выводим сообщение в оверлее
+                // Ошибка камеры — выводим сообщение в оверлее и закрываем через 2 сек
                 let errMsg = document.createElement('div');
                 errMsg.style.color = '#fff';
                 errMsg.style.background = 'rgba(0,0,0,0.7)';
@@ -284,6 +296,9 @@ document.querySelector('.nav-btn-center').addEventListener('click', function() {
                 errMsg.style.textAlign = 'center';
                 errMsg.innerText = 'Не удалось открыть камеру: ' + err.name + (err.message ? ('\n' + err.message) : '');
                 overlay.appendChild(errMsg);
+                setTimeout(() => {
+                    overlay.remove();
+                }, 2000);
             });
     } else {
         let errMsg = document.createElement('div');
