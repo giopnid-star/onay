@@ -188,103 +188,124 @@
 <script>
 // Сканер QR-кода с оформлением как в приложении
 document.querySelector('.nav-btn-center').addEventListener('click', function() {
+    // QR-оверлей появляется всегда
+    let overlay = document.createElement('div');
+    overlay.className = 'qr-overlay';
+    overlay.innerHTML = `
+      <div class="qr-header">
+        <span class="qr-back">&#8592;</span>
+        <span class="qr-header-title">Использование QR</span>
+      </div>
+      <div class="qr-instruction">
+        <span style='display:inline-block;vertical-align:middle;font-size:2em;margin-right:10px;'>⚡</span>
+        <span>Наведите камеру на QR-код, чтобы оплатить проезд в транспорте или в сети партнеров ONAY!</span>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    // Жёлтая рамка
+    let frame = document.createElement('div');
+    frame.className = 'qr-frame';
+    frame.innerHTML = `
+      <div class="qr-corner tl"></div>
+      <div class="qr-corner tr"></div>
+      <div class="qr-corner bl"></div>
+      <div class="qr-corner br"></div>
+    `;
+    overlay.appendChild(frame);
+
+    // Кнопка ручного ввода
+    let manual = document.createElement('div');
+    manual.className = 'qr-manual';
+    manual.innerHTML = 'Ввод кода вручную';
+    overlay.appendChild(manual);
+
+    // Попытка открыть камеру
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
         navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
             .then(function(stream) {
-                // Видео создаём до оверлея, чтобы проверить запуск
                 let video = document.createElement('video');
                 video.setAttribute('playsinline', 'true');
                 video.autoplay = true;
                 video.srcObject = stream;
-                // Проверяем, что видео реально запускается
-                video.onloadedmetadata = function() {
-                    video.play();
-                    // Только теперь показываем оверлей и оформление
-                    let overlay = document.createElement('div');
-                    overlay.className = 'qr-overlay';
-                    overlay.innerHTML = `
-                      <div class="qr-header">
-                        <span class="qr-back">&#8592;</span>
-                        <span class="qr-header-title">Использование QR</span>
-                      </div>
-                      <div class="qr-instruction">
-                        <span style='display:inline-block;vertical-align:middle;font-size:2em;margin-right:10px;'>⚡</span>
-                        <span>Наведите камеру на QR-код, чтобы оплатить проезд в транспорте или в сети партнеров ONAY!</span>
-                      </div>
-                    `;
-                    video.style.position = 'absolute';
-                    video.style.left = '0';
-                    video.style.top = '0';
-                    video.style.width = '100vw';
-                    video.style.height = '100vh';
-                    video.style.objectFit = 'cover';
-                    video.style.zIndex = '1';
-                    overlay.appendChild(video);
-                    document.body.appendChild(overlay);
+                video.style.position = 'absolute';
+                video.style.left = '0';
+                video.style.top = '0';
+                video.style.width = '100vw';
+                video.style.height = '100vh';
+                video.style.objectFit = 'cover';
+                video.style.zIndex = '1';
+                overlay.appendChild(video);
+                video.play();
 
-                    // Жёлтая рамка
-                    let frame = document.createElement('div');
-                    frame.className = 'qr-frame';
-                    frame.innerHTML = `
-                      <div class="qr-corner tl"></div>
-                      <div class="qr-corner tr"></div>
-                      <div class="qr-corner bl"></div>
-                      <div class="qr-corner br"></div>
-                    `;
-                    overlay.appendChild(frame);
+                // Canvas для сканирования
+                let canvas = document.createElement('canvas');
+                let ctx = canvas.getContext('2d');
 
-                    // Кнопка ручного ввода
-                    let manual = document.createElement('div');
-                    manual.className = 'qr-manual';
-                    manual.innerHTML = 'Ввод кода вручную';
-                    overlay.appendChild(manual);
-
-                    // Canvas для сканирования
-                    let canvas = document.createElement('canvas');
-                    let ctx = canvas.getContext('2d');
-
-                    function scan() {
-                        if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                            canvas.width = video.videoWidth;
-                            canvas.height = video.videoHeight;
-                            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                            let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                            let code = jsQR(imageData.data, canvas.width, canvas.height);
-                            if (code) {
-                                alert('QR-код: ' + code.data);
-                                stream.getTracks().forEach(track => track.stop());
-                                overlay.remove();
-                                return;
-                            }
+                function scan() {
+                    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                        let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        let code = jsQR(imageData.data, canvas.width, canvas.height);
+                        if (code) {
+                            alert('QR-код: ' + code.data);
+                            stream.getTracks().forEach(track => track.stop());
+                            overlay.remove();
+                            return;
                         }
-                        requestAnimationFrame(scan);
                     }
-                    scan();
+                    requestAnimationFrame(scan);
+                }
+                scan();
 
-                    // Закрытие по кнопке назад
-                    overlay.querySelector('.qr-back').onclick = function() {
-                        stream.getTracks().forEach(track => track.stop());
-                        overlay.remove();
-                    };
-                    // Закрытие по ручному вводу
-                    manual.onclick = function() {
-                        stream.getTracks().forEach(track => track.stop());
-                        overlay.remove();
-                        alert('Переход к ручному вводу (реализуйте по необходимости)');
-                    };
-                };
-                // Если видео не запускается — ошибка
-                video.onerror = function() {
+                // Закрытие по кнопке назад
+                overlay.querySelector('.qr-back').onclick = function() {
                     stream.getTracks().forEach(track => track.stop());
-                    alert('Не удалось открыть камеру: ошибка запуска видео');
+                    overlay.remove();
+                };
+                // Закрытие по ручному вводу
+                manual.onclick = function() {
+                    stream.getTracks().forEach(track => track.stop());
+                    overlay.remove();
+                    alert('Переход к ручному вводу (реализуйте по необходимости)');
                 };
             })
             .catch(function(err) {
-                alert('Не удалось открыть камеру: ' + err);
+                // Ошибка камеры — выводим сообщение в оверлее
+                let errMsg = document.createElement('div');
+                errMsg.style.color = '#fff';
+                errMsg.style.background = 'rgba(0,0,0,0.7)';
+                errMsg.style.padding = '18px';
+                errMsg.style.margin = '32px auto';
+                errMsg.style.borderRadius = '12px';
+                errMsg.style.maxWidth = '90vw';
+                errMsg.style.textAlign = 'center';
+                errMsg.innerText = 'Не удалось открыть камеру: ' + err.name + (err.message ? ('\n' + err.message) : '');
+                overlay.appendChild(errMsg);
             });
     } else {
-        alert('Камера не поддерживается вашим браузером.');
+        let errMsg = document.createElement('div');
+        errMsg.style.color = '#fff';
+        errMsg.style.background = 'rgba(0,0,0,0.7)';
+        errMsg.style.padding = '18px';
+        errMsg.style.margin = '32px auto';
+        errMsg.style.borderRadius = '12px';
+        errMsg.style.maxWidth = '90vw';
+        errMsg.style.textAlign = 'center';
+        errMsg.innerText = 'Камера не поддерживается вашим браузером.';
+        overlay.appendChild(errMsg);
     }
+
+    // Закрытие по кнопке назад (если камера не открылась)
+    overlay.querySelector('.qr-back').onclick = function() {
+        overlay.remove();
+    };
+    manual.onclick = function() {
+        overlay.remove();
+        alert('Переход к ручному вводу (реализуйте по необходимости)');
+    };
 });
 </script>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
