@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Мои карты</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="header">
+            <div class="header-tabs">
+                <span class="tab active">Мои карты</span>
+                <span class="tab">Другие карты</span>
+            </div>
+            <div class="header-bell"></div>
+        </header>
+        <main class="main-content">
+            <section class="card-section">
+                <div class="card card-virtual">
+                    <div class="card-row">
+                        <span class="card-type">Virtual</span>
+                        <button class="card-btn">Единая</button>
+                    </div>
+                    <div class="card-balance-row">
+                        <span class="card-balance">100 <span class="currency">₸</span></span>
+                        <button class="card-plus">+</button>
+                    </div>
+                    <div class="card-trip">1 поездка, Караганда</div>
+                    <button class="card-details">Детали карты</button>
+                </div>
+            </section>
+            <section class="actions-section">
+                <button class="action-btn">Пополнить</button>
+                <button class="action-btn">Перевести</button>
+                <button class="action-btn">История</button>
+            </section>
+            <section class="promo-section">
+                <div class="promo-slider">
+                    <div class="promo-slide"><img src="1/image1.png" alt="promo1"></div>
+                    <div class="promo-slide"><img src="1/image2.png" alt="promo2"></div>
+                    <div class="promo-slide"><img src="1/image3.png" alt="promo3"></div>
+                    <div class="promo-slide"><img src="1/image4.png" alt="promo4"></div>
+                </div>
+                <!-- dots removed -->
+            </section>
+            <script>
+            // Автоматический слайдер для промо-картинок
+            (function() {
+                const slides = document.querySelectorAll('.promo-slide');
+                let current = 0;
+                function showSlide(idx) {
+                    slides.forEach((slide, i) => {
+                        slide.style.display = i === idx ? 'block' : 'none';
+                    });
+                }
+                function nextSlide() {
+                    current = (current + 1) % slides.length;
+                    showSlide(current);
+                }
+                showSlide(current);
+                setInterval(nextSlide, 7000);
+            })();
+            </script>
+            <section class="quick-actions-section">
+                <button class="quick-action">
+                    <div class="quick-action-icon orange"></div>
+                    <span>Оплатить по коду</span>
+                </button>
+                <button class="quick-action">
+                    <div class="quick-action-icon green"></div>
+                    <span>Мои билеты</span>
+                </button>
+                <button class="quick-action">
+                    <div class="quick-action-icon purple"></div>
+                    <span>Проездной</span>
+                </button>
+            </section>
+            <section class="offers-section">
+                <h2>Предложения для Вас</h2>
+            </section>
+        </main>
+        <nav class="bottom-nav">
+            <button class="nav-btn">
+                                <div class="nav-icon bus">
+                                    <img src="Снимок экрана 2026-02-20 183620.png" alt="bus icon" width="28" height="28" style="display:block;width:28px;height:28px;" />
+                                </div>
+                <span>Маршруты</span>
+            </button>
+            <button class="nav-btn">
+                                <div class="nav-icon card">
+                                    <img src="image.png" alt="card icon" width="28" height="28" style="display:block;width:28px;height:28px;" />
+                                </div>
+                <span>Карты</span>
+            </button>
+                        <button class="nav-btn nav-btn-center">
+                                <div class="nav-icon qr"></div>
+                        </button>
+            <button class="nav-btn">
+                                <div class="nav-icon shop">
+                                    <img src="Снимок экрана 2026-02-20 193153.png" alt="shop icon" width="28" height="28" style="display:block;width:28px;height:28px;" />
+                                </div>
+                <span>Магазин</span>
+            </button>
+            <button class="nav-btn">
+                                <div class="nav-icon menu">
+                                    <img src="Снимок экрана 2026-02-20 184155.png" alt="menu icon" width="28" height="28" style="display:block;width:28px;height:28px;" />
+                                </div>
+                <span>Меню</span>
+            </button>
+        </nav>
+    </div>
+</body>
+</html>
