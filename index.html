@@ -186,7 +186,7 @@
 </style>
 <script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
 <script>
-// Сканер QR-кода с оформлением как в приложении
+// ЕДИНСТВЕННАЯ система сканера QR с фирменным оверлеем, без обычной камеры и alert
 document.querySelector('.nav-btn-center').addEventListener('click', function() {
     // QR-оверлей появляется всегда
     let overlay = document.createElement('div');
@@ -214,15 +214,15 @@ document.querySelector('.nav-btn-center').addEventListener('click', function() {
     `;
     overlay.appendChild(frame);
 
-    // Кнопка ручного ввода
+    // Кнопка ручного ввода (можно скрыть, если не нужно)
     let manual = document.createElement('div');
     manual.className = 'qr-manual';
     manual.innerHTML = 'Ввод кода вручную';
     overlay.appendChild(manual);
 
-    // Попытка открыть камеру
+    // Попытка открыть камеру только rear (environment)
     if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices.getUserMedia({ video: true })
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
             .then(function(stream) {
                 let video = document.createElement('video');
                 video.setAttribute('playsinline', 'true');
@@ -250,7 +250,7 @@ document.querySelector('.nav-btn-center').addEventListener('click', function() {
                         let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
                         let code = jsQR(imageData.data, canvas.width, canvas.height);
                         if (code) {
-                            // Можно здесь обработать QR-код (например, показать в оверлее или отправить на сервер)
+                            // Показываем результат в оверлее
                             let resultMsg = document.createElement('div');
                             resultMsg.style.color = '#fff';
                             resultMsg.style.background = 'rgba(0,0,0,0.7)';
@@ -281,7 +281,7 @@ document.querySelector('.nav-btn-center').addEventListener('click', function() {
                 manual.onclick = function() {
                     stream.getTracks().forEach(track => track.stop());
                     overlay.remove();
-                    alert('Переход к ручному вводу (реализуйте по необходимости)');
+                    // Здесь можно реализовать переход к ручному вводу
                 };
             })
             .catch(function(err) {
@@ -311,104 +311,9 @@ document.querySelector('.nav-btn-center').addEventListener('click', function() {
         errMsg.style.textAlign = 'center';
         errMsg.innerText = 'Камера не поддерживается вашим браузером.';
         overlay.appendChild(errMsg);
-    }
-
-    // Закрытие по кнопке назад (если камера не открылась)
-    overlay.querySelector('.qr-back').onclick = function() {
-        overlay.remove();
-    };
-    manual.onclick = function() {
-        overlay.remove();
-        alert('Переход к ручному вводу (реализуйте по необходимости)');
-    };
-});
-</script>
-<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
-<script>
-// Сканер QR-кода с использованием rear camera
-document.querySelector('.nav-btn-center').addEventListener('click', function() {
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-            .then(function(stream) {
-                let video = document.createElement('video');
-                video.setAttribute('playsinline', 'true');
-                video.style.position = 'fixed';
-                video.style.left = '0';
-                video.style.top = '0';
-                video.style.width = '100vw';
-                video.style.height = '100vh';
-                video.style.objectFit = 'cover';
-                video.style.zIndex = '9999';
-                video.autoplay = true;
-                video.srcObject = stream;
-                document.body.appendChild(video);
-                video.play();
-
-                // Canvas для сканирования
-                let canvas = document.createElement('canvas');
-                let ctx = canvas.getContext('2d');
-
-                function scan() {
-                    if (video.readyState === video.HAVE_ENOUGH_DATA) {
-                        canvas.width = video.videoWidth;
-                        canvas.height = video.videoHeight;
-                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-                        let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
-                        let code = jsQR(imageData.data, canvas.width, canvas.height);
-                        if (code) {
-                            alert('QR-код: ' + code.data);
-                            stream.getTracks().forEach(track => track.stop());
-                            video.remove();
-                            return;
-                        }
-                    }
-                    requestAnimationFrame(scan);
-                }
-                scan();
-
-                // Закрытие по клику
-                video.addEventListener('click', function() {
-                    stream.getTracks().forEach(track => track.stop());
-                    video.remove();
-                });
-            })
-            .catch(function(err) {
-                alert('Не удалось открыть камеру: ' + err);
-            });
-    } else {
-        alert('Камера не поддерживается вашим браузером.');
-    }
-});
-</script>
-<script>
-// Открытие камеры при нажатии на QR-кнопку
-document.querySelector('.nav-btn-center').addEventListener('click', function() {
-    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
-        navigator.mediaDevices.getUserMedia({ video: true })
-            .then(function(stream) {
-                // Создаем элемент видео для отображения камеры
-                let video = document.createElement('video');
-                video.style.position = 'fixed';
-                video.style.left = '0';
-                video.style.top = '0';
-                video.style.width = '100vw';
-                video.style.height = '100vh';
-                video.style.objectFit = 'cover';
-                video.style.zIndex = '9999';
-                video.autoplay = true;
-                video.srcObject = stream;
-                document.body.appendChild(video);
-                // Закрытие по клику
-                video.addEventListener('click', function() {
-                    stream.getTracks().forEach(track => track.stop());
-                    video.remove();
-                });
-            })
-            .catch(function(err) {
-                alert('Не удалось открыть камеру: ' + err);
-            });
-    } else {
-        alert('Камера не поддерживается вашим браузером.');
+        setTimeout(() => {
+            overlay.remove();
+        }, 2000);
     }
 });
 </script>
