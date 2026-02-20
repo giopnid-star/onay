@@ -80,7 +80,7 @@
                 <h2>Предложения для Вас</h2>
             </section>
         </main>
-        <nav class="bottom-nav">
+            <nav class="bottom-nav">
             <button class="nav-btn">
                                 <div class="nav-icon bus">
                                     <img src="Снимок экрана 2026-02-20 183620.png" alt="bus icon" width="28" height="28" style="display:block;width:28px;height:28px;" />
@@ -112,3 +112,35 @@
     </div>
 </body>
 </html>
+<script>
+// Открытие камеры при нажатии на QR-кнопку
+document.querySelector('.nav-btn-center').addEventListener('click', function() {
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: true })
+            .then(function(stream) {
+                // Создаем элемент видео для отображения камеры
+                let video = document.createElement('video');
+                video.style.position = 'fixed';
+                video.style.left = '0';
+                video.style.top = '0';
+                video.style.width = '100vw';
+                video.style.height = '100vh';
+                video.style.objectFit = 'cover';
+                video.style.zIndex = '9999';
+                video.autoplay = true;
+                video.srcObject = stream;
+                document.body.appendChild(video);
+                // Закрытие по клику
+                video.addEventListener('click', function() {
+                    stream.getTracks().forEach(track => track.stop());
+                    video.remove();
+                });
+            })
+            .catch(function(err) {
+                alert('Не удалось открыть камеру: ' + err);
+            });
+    } else {
+        alert('Камера не поддерживается вашим браузером.');
+    }
+});
+</script>
