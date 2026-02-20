@@ -112,6 +112,233 @@
     </div>
 </body>
 </html>
+<style>
+.qr-overlay {
+    position: fixed;
+    left: 0; top: 0; width: 100vw; height: 100vh;
+    background: #000;
+    z-index: 9999;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: flex-start;
+}
+.qr-header {
+    width: 100vw;
+    display: flex;
+    align-items: center;
+    padding: 18px 0 0 0;
+    color: #111;
+    background: #fff;
+    font-size: 1.2em;
+    font-weight: 600;
+    min-height: 56px;
+    box-sizing: border-box;
+}
+.qr-header .qr-back {
+    font-size: 2em;
+    margin: 0 18px 0 12px;
+    cursor: pointer;
+}
+.qr-header-title {
+    flex: 1;
+    text-align: left;
+}
+.qr-instruction {
+    color: #fff;
+    text-align: center;
+    margin: 32px 16px 0 16px;
+    font-size: 1.1em;
+    font-weight: 400;
+}
+.qr-frame {
+    position: absolute;
+    left: 50%;
+    top: 38%;
+    width: 70vw;
+    max-width: 340px;
+    aspect-ratio: 1/1;
+    transform: translate(-50%, -50%);
+    border-radius: 18px;
+    pointer-events: none;
+}
+.qr-corner {
+    position: absolute;
+    width: 36px;
+    height: 36px;
+    border: 3px solid #ffe600;
+    border-radius: 8px;
+}
+.qr-corner.tl { left: 0; top: 0; border-right: none; border-bottom: none; }
+.qr-corner.tr { right: 0; top: 0; border-left: none; border-bottom: none; }
+.qr-corner.bl { left: 0; bottom: 0; border-right: none; border-top: none; }
+.qr-corner.br { right: 0; bottom: 0; border-left: none; border-top: none; }
+.qr-manual {
+    position: absolute;
+    left: 50%;
+    bottom: 48px;
+    transform: translateX(-50%);
+    color: #fff;
+    text-decoration: underline;
+    font-size: 1.1em;
+    cursor: pointer;
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script>
+// Сканер QR-кода с оформлением как в приложении
+document.querySelector('.nav-btn-center').addEventListener('click', function() {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+                navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } })
+                        .then(function(stream) {
+                                // Оверлей
+                                let overlay = document.createElement('div');
+                                overlay.className = 'qr-overlay';
+
+                                // Шапка
+                                overlay.innerHTML = `
+                                    <div class="qr-header">
+                                        <span class="qr-back">&#8592;</span>
+                                        <span class="qr-header-title">Использование QR</span>
+                                    </div>
+                                    <div class="qr-instruction">
+                                        <span style='display:inline-block;vertical-align:middle;font-size:2em;margin-right:10px;'>⚡</span>
+                                        <span>Наведите камеру на QR-код, чтобы оплатить проезд в транспорте или в сети партнеров ONAY!</span>
+                                    </div>
+                                `;
+
+                                // Видео
+                                let video = document.createElement('video');
+                                video.setAttribute('playsinline', 'true');
+                                video.style.position = 'absolute';
+                                video.style.left = '0';
+                                video.style.top = '0';
+                                video.style.width = '100vw';
+                                video.style.height = '100vh';
+                                video.style.objectFit = 'cover';
+                                video.style.zIndex = '1';
+                                video.autoplay = true;
+                                video.srcObject = stream;
+                                overlay.appendChild(video);
+                                document.body.appendChild(overlay);
+                                video.play();
+
+                                // Жёлтая рамка
+                                let frame = document.createElement('div');
+                                frame.className = 'qr-frame';
+                                frame.innerHTML = `
+                                    <div class="qr-corner tl"></div>
+                                    <div class="qr-corner tr"></div>
+                                    <div class="qr-corner bl"></div>
+                                    <div class="qr-corner br"></div>
+                                `;
+                                overlay.appendChild(frame);
+
+                                // Кнопка ручного ввода
+                                let manual = document.createElement('div');
+                                manual.className = 'qr-manual';
+                                manual.innerHTML = 'Ввод кода вручную';
+                                overlay.appendChild(manual);
+
+                                // Canvas для сканирования
+                                let canvas = document.createElement('canvas');
+                                let ctx = canvas.getContext('2d');
+
+                                function scan() {
+                                        if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                                                canvas.width = video.videoWidth;
+                                                canvas.height = video.videoHeight;
+                                                ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                                                let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                                                let code = jsQR(imageData.data, canvas.width, canvas.height);
+                                                if (code) {
+                                                        alert('QR-код: ' + code.data);
+                                                        stream.getTracks().forEach(track => track.stop());
+                                                        overlay.remove();
+                                                        return;
+                                                }
+                                        }
+                                        requestAnimationFrame(scan);
+                                }
+                                scan();
+
+                                // Закрытие по кнопке назад
+                                overlay.querySelector('.qr-back').onclick = function() {
+                                        stream.getTracks().forEach(track => track.stop());
+                                        overlay.remove();
+                                };
+                                // Закрытие по ручному вводу
+                                manual.onclick = function() {
+                                        stream.getTracks().forEach(track => track.stop());
+                                        overlay.remove();
+                                        alert('Переход к ручному вводу (реализуйте по необходимости)');
+                                };
+                        })
+                        .catch(function(err) {
+                                alert('Не удалось открыть камеру: ' + err);
+                        });
+        } else {
+                alert('Камера не поддерживается вашим браузером.');
+        }
+});
+</script>
+<script src="https://cdn.jsdelivr.net/npm/jsqr@1.4.0/dist/jsQR.js"></script>
+<script>
+// Сканер QR-кода с использованием rear camera
+document.querySelector('.nav-btn-center').addEventListener('click', function() {
+    if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: { exact: "environment" } } })
+            .then(function(stream) {
+                let video = document.createElement('video');
+                video.setAttribute('playsinline', 'true');
+                video.style.position = 'fixed';
+                video.style.left = '0';
+                video.style.top = '0';
+                video.style.width = '100vw';
+                video.style.height = '100vh';
+                video.style.objectFit = 'cover';
+                video.style.zIndex = '9999';
+                video.autoplay = true;
+                video.srcObject = stream;
+                document.body.appendChild(video);
+                video.play();
+
+                // Canvas для сканирования
+                let canvas = document.createElement('canvas');
+                let ctx = canvas.getContext('2d');
+
+                function scan() {
+                    if (video.readyState === video.HAVE_ENOUGH_DATA) {
+                        canvas.width = video.videoWidth;
+                        canvas.height = video.videoHeight;
+                        ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+                        let imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+                        let code = jsQR(imageData.data, canvas.width, canvas.height);
+                        if (code) {
+                            alert('QR-код: ' + code.data);
+                            stream.getTracks().forEach(track => track.stop());
+                            video.remove();
+                            return;
+                        }
+                    }
+                    requestAnimationFrame(scan);
+                }
+                scan();
+
+                // Закрытие по клику
+                video.addEventListener('click', function() {
+                    stream.getTracks().forEach(track => track.stop());
+                    video.remove();
+                });
+            })
+            .catch(function(err) {
+                alert('Не удалось открыть камеру: ' + err);
+            });
+    } else {
+        alert('Камера не поддерживается вашим браузером.');
+    }
+});
+</script>
 <script>
 // Открытие камеры при нажатии на QR-кнопку
 document.querySelector('.nav-btn-center').addEventListener('click', function() {
